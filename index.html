@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サラダ材料表</title>
+<style>
+  :root { --green:#2e8b57; --green-d:#23704a; --bg:#f4f8f4; --line:#d5e2d5; --red:#c0392b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Hiragino Sans","Meiryo",sans-serif; background:var(--bg); color:#222; font-size:16px; line-height:1.5; }
+  header { background:var(--green); color:#fff; padding:12px 16px; font-size:20px; font-weight:bold; }
+  .tabs { display:flex; background:#fff; border-bottom:2px solid var(--line); position:sticky; top:0; z-index:5; }
+  .tabs button { flex:1; padding:14px 8px; border:0; background:none; font-size:16px; font-weight:bold; color:#666; border-bottom:4px solid transparent; }
+  .tabs button.active { color:var(--green); border-bottom-color:var(--green); }
+  main { max-width:900px; margin:0 auto; padding:12px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:14px; }
+  .card h2 { margin:0 0 8px; font-size:17px; color:var(--green-d); }
+  button, input, select { font:inherit; }
+  input, select { padding:10px; border:1px solid #bbb; border-radius:8px; background:#fff; min-width:0; }
+  input[type=number] { width:100%; }
+  .btn { padding:10px 14px; border:0; border-radius:8px; background:var(--green); color:#fff; font-weight:bold; cursor:pointer; }
+  .btn.sub { background:#e7efe7; color:var(--green-d); }
+  .btn.del { background:#fbe9e7; color:var(--red); }
+  .btn.small { padding:8px 10px; font-size:14px; }
+  .btn.big { width:100%; padding:14px; font-size:17px; }
+  .seg { display:flex; gap:8px; }
+  .seg button { flex:1; padding:12px; border:2px solid var(--line); border-radius:8px; background:#fff; font-weight:bold; font-size:16px; }
+  .seg button.active { border-color:var(--green); background:#e7f5ec; color:var(--green-d); }
+  .row { display:grid; grid-template-columns:1fr 1fr 44px; gap:6px; align-items:end; margin-bottom:10px; padding:8px; border:1px solid var(--line); border-radius:8px; background:#fafcfa; }
+  .row select { grid-column:1 / -1; width:100%; }
+  .row label { font-size:12px; color:#666; display:block; }
+  .row .btn { height:42px; padding:0; }
+  .tw { overflow-x:auto; margin-bottom:12px; }
+  .tw h3 { margin:8px 0 4px; font-size:15px; }
+  th.name, td.name { text-align:left; }
+  tr.total td { background:#f1f5f1; font-weight:bold; }
+  .day-title { font-weight:bold; margin:4px 0 8px; }
+  .hint { color:#777; font-size:13px; }
+  table { border-collapse:collapse; width:100%; table-layout:fixed; }
+  th, td { overflow-wrap:anywhere; }
+  th, td { border:1px solid #999; padding:0 8px; text-align:left; height:36px; vertical-align:middle; }
+  th { background:#e5e7eb; }
+  body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .day-sec { margin-bottom:20px; }
+  td.num, th.num { text-align:right; }
+  th.num { white-space:nowrap; overflow-wrap:normal; }
+  .salad-item { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .salad-item:last-child { border-bottom:0; }
+  .salad-item .info { flex:1; min-width:0; }
+  .salad-item .name { font-weight:bold; }
+  .salad-item .mat { font-size:13px; color:#666; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ing-row { display:grid; grid-template-columns:1fr 1fr 1fr 44px; gap:6px; align-items:end; margin-bottom:10px; padding:8px; border:1px solid var(--line); border-radius:8px; background:#fafcfa; }
+  .ing-row .f-name { grid-column:1 / -1; }
+  .ing-row input, .ing-row select { width:100%; }
+  .ing-row label { display:block; font-size:12px; color:#666; }
+  .ing-row .btn { padding:0; height:42px; }
+  .size-block { border:2px solid var(--green); border-radius:10px; padding:8px; margin-bottom:12px; background:#fff; }
+  .size-head { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end; margin-bottom:8px; }
+  .size-head label { display:block; font-weight:bold; font-size:13px; color:var(--green-d); }
+  .size-head input { width:100%; }
+  .chk { display:flex; gap:8px; align-items:flex-start; margin:10px 0; padding:10px; background:#fff8e1; border-radius:8px; font-weight:bold; }
+  .chk input { width:22px; height:22px; flex:0 0 auto; margin-top:2px; }
+  .chk small { display:block; font-weight:normal; color:#666; }
+  tr.tasting td { background:#fff8e1; }
+  label.lb { display:block; font-weight:bold; margin:6px 0 4px; }
+  .hidden { display:none !important; }
+  .print-only { display:none; }
+  .dateline { font-size:18px; font-weight:bold; white-space:nowrap; }
+  .dateline .blank { display:inline-block; width:3em; }
+  .dateline .blank.wd { width:2.5em; }
+  .date-top { margin:0 0 10px; }
+
+  /* 印刷用レイアウト（画面計測と印刷で共通） */
+  body.print-mode header, body.print-mode .tabs, body.print-mode .no-print, body.print-mode .page-input { display:none !important; }
+  body.print-mode { background:#fff; font-size:12px; line-height:1.35; }
+  body.print-mode main { padding:0; max-width:none; margin:0; }
+  body.print-mode .page-calc > .card:not(#result) { display:none; }
+  body.print-mode #result { border:0; padding:0; margin:0; width:278mm; }
+  body.print-mode .print-only { display:block; }
+  body.print-mode th, body.print-mode td { padding:0 6px; height:9mm; border-color:#000; }   /* 全行の高さを統一 */
+  /* 白黒印刷想定: 色は使わず、黒文字・黒罫線・無彩色の薄いグレーだけにする */
+  body.print-mode, body.print-mode th, body.print-mode td { color:#000; }
+  body.print-mode th { background:#e6e6e6; }
+  body.print-mode tr.tasting td { background:#f2f2f2; }
+  body.print-mode tr.total td { background:#fff; font-weight:bold; border-top:3px double #000; }
+  body.print-mode table { border:2px solid #000; }
+  body.print-mode .day-sec { margin-bottom:30mm; }       /* 1日目と2日目の表の隙間 */
+  body.print-mode .day-sec:last-child { margin-bottom:0; }
+  body.print-mode .tw { overflow:visible; margin-bottom:6px; }
+  body.print-mode .tabpane:not(.page-calc) { display:none !important; }
+  @page { size:A4 landscape; margin:8mm; }
+</style>
+</head>
+<body>
+<header>🥗 サラダ材料表</header>
+<div class="tabs">
+  <button id="tabCalc" class="active">材料を計算</button>
+  <button id="tabSalad">サラダ登録</button>
+</div>
+
+<main>
+  <!-- 計算画面 -->
+  <div id="paneCalc" class="tabpane page-calc">
+    <div class="card no-print">
+      <h2>1. 何日分？</h2>
+      <div class="seg" id="modeSeg">
+        <button data-mode="1">1日分</button>
+        <button data-mode="2">2日分</button>
+      </div>
+      <p class="hint">2日分の場合、日ごとに違うサラダ・個数を入力できます。</p>
+    </div>
+
+    <div class="card no-print">
+      <h2>2. サラダと個数</h2>
+      <div id="daysBox"></div>
+    </div>
+
+    <div class="card" id="result">
+      <h2 class="no-print">3. 材料表</h2>
+      <div id="tableBox"></div>
+      <div class="no-print" style="margin-top:12px">
+        <button class="btn big" id="printBtn">🖨 印刷（A4・1ページに収める）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- サラダ登録画面 -->
+  <div id="paneSalad" class="tabpane hidden">
+    <div class="card" id="listCard">
+      <h2>登録済みのサラダ</h2>
+      <p class="hint">材料の数量は「サラダ1個あたり」、検食は「個数に関わらず固定の量」で登録します。</p>
+      <div id="saladList"></div>
+      <button class="btn big" id="newSaladBtn" style="margin-top:10px">＋ サラダを新規登録</button>
+      <hr style="border:0;border-top:1px dashed var(--line);margin:16px 0">
+      <h2>バックアップ／端末の引っ越し</h2>
+      <p class="hint">登録内容をなくさないよう、ときどき書き出してください。どれか1つの方法でOKです。</p>
+      <div style="display:flex; gap:8px; margin-bottom:8px">
+        <button class="btn sub" id="exportBtn" style="flex:1">ファイルに保存</button>
+        <button class="btn sub" id="shareBtn" style="flex:1">共有で送る</button>
+      </div>
+      <button class="btn sub" id="copyBtn" style="width:100%; margin-bottom:8px">文字としてコピー（メモ帳・LINEなどに貼り付け）</button>
+      <label class="lb" for="backupText">バックアップの文字（書き出すとここに表示／読み込みはここに貼り付け）</label>
+      <textarea id="backupText" rows="4" style="width:100%; padding:8px; border:1px solid #bbb; border-radius:8px; font-size:12px" placeholder="ここに貼り付けて「文字から読み込み」"></textarea>
+      <div style="display:flex; gap:8px; margin-top:8px">
+        <button class="btn sub" id="importTextBtn" style="flex:1">文字から読み込み</button>
+        <button class="btn sub" id="importBtn" style="flex:1">ファイルから読み込み</button>
+      </div>
+      <input type="file" id="importFile" class="hidden">
+    </div>
+
+    <div class="card hidden" id="editCard">
+      <h2 id="editTitle">サラダ登録</h2>
+      <label class="lb" for="saladName">サラダ名</label>
+      <input id="saladName" type="text" style="width:100%" placeholder="例: シーザーサラダ">
+      <label class="chk"><input type="checkbox" id="fixedChk"><span>個数が決まっているサラダ<small>入力できる個数が限られ、個数ごとに材料の量が固定（例: オクラツナ 8・12・18）</small></span></label>
+      <div id="normalBox">
+        <label class="lb">材料</label>
+        <div class="hint" style="margin-bottom:6px">数量＝サラダ1個あたり ／ 検食＝このサラダを作るとき個数に関わらず固定で必要な量（不要なら空欄）</div>
+        <div id="ingRows"></div>
+        <button class="btn sub small" id="addIngBtn">＋ 材料を追加</button>
+      </div>
+      <div id="fixedBox" class="hidden">
+        <label class="lb">個数ごとの材料</label>
+        <div class="hint" style="margin-bottom:6px">数量＝その個数ぶんの合計量（個数を掛けません） ／ 検食＝固定で必要な量（不要なら空欄）</div>
+        <div id="sizeBlocks"></div>
+        <button class="btn sub small" id="addSizeBtn">＋ 個数を追加</button>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:16px">
+        <button class="btn sub" id="cancelBtn" style="flex:1">キャンセル</button>
+        <button class="btn" id="saveBtn" style="flex:2">保存</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'saladPlanner.v1';
+  var UNITS = ['g', 'kg', 'ml', 'L', '個', '枚', '本', '房', 'パック', '袋', '大さじ', '小さじ'];
+
+  var state = load();
+  var editingId = null;
+
+  function load() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY));
+      if (s && s.salads && s.plan) return s;
+    } catch (e) {}
+    return {
+      salads: [
+        { id: uid(), name: 'シーザーサラダ', ingredients: [
+          { name: 'レタス', qty: 50, unit: 'g' }, { name: 'ベーコン', qty: 15, unit: 'g' },
+          { name: 'クルトン', qty: 5, unit: 'g' }, { name: 'パルメザンチーズ', qty: 3, unit: 'g' } ] },
+        { id: uid(), name: 'コーンサラダ', ingredients: [
+          { name: 'レタス', qty: 40, unit: 'g' }, { name: 'コーン', qty: 20, unit: 'g' },
+          { name: 'ミニトマト', qty: 2, unit: '個' } ] }
+      ],
+      plan: { mode: 1, title: '', days: [[{ saladId: '', count: '' }], [{ saladId: '', count: '' }]] }
+    };
+  }
+  function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+  function uid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function $(id) { return document.getElementById(id); }
+  function findSalad(id) { return state.salads.filter(function (s) { return s.id === id; })[0]; }
+  function fmt(n) { return String(Math.round(n * 100) / 100); }
+
+  /* ---------- タブ ---------- */
+  function showTab(name) {
+    $('paneCalc').classList.toggle('hidden', name !== 'calc');
+    $('paneSalad').classList.toggle('hidden', name !== 'salad');
+    $('tabCalc').classList.toggle('active', name === 'calc');
+    $('tabSalad').classList.toggle('active', name === 'salad');
+    if (name === 'calc') renderCalc(); else renderSaladList();
+  }
+  $('tabCalc').onclick = function () { showTab('calc'); };
+  $('tabSalad').onclick = function () { showTab('salad'); };
+
+  /* ---------- 計算画面 ---------- */
+  function renderCalc() {
+    var plan = state.plan;
+    var segs = $('modeSeg').querySelectorAll('button');
+    for (var i = 0; i < segs.length; i++)
+      segs[i].classList.toggle('active', Number(segs[i].dataset.mode) === plan.mode);
+    renderDays();
+    renderResult();
+  }
+
+  function countField(s, row, at) {
+    if (s && s.sizes) {   // 個数が決まっているサラダ → 選択式
+      return '<div style="grid-column:1 / 3"><label>個数（この中から選択）</label><select' + at + ' data-f="count">' +
+        '<option value="">個数を選択</option>' +
+        s.sizes.map(function (z) {
+          return '<option value="' + z.count + '"' + (String(z.count) === String(row.count) ? ' selected' : '') + '>' + z.count + '</option>';
+        }).join('') + '</select></div>';
+    }
+    return '<div style="grid-column:1 / 3"><label>個数</label><input type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="' + esc(row.count) + '"' + at + ' data-f="count"></div>';
+  }
+
+  function renderDays() {
+    var plan = state.plan, html = '';
+    for (var d = 0; d < plan.mode; d++) {
+      html += '<div class="day-block" data-day="' + d + '">';
+      if (plan.mode === 2) html += '<div class="day-title">' + (d + 1) + '日目</div>';
+      plan.days[d].forEach(function (row, r) {
+        var at = ' data-d="' + d + '" data-r="' + r + '"';
+        html += '<div class="row">' +
+          '<select' + at + ' data-f="saladId">' +
+          '<option value="">サラダを選択</option>' +
+          state.salads.map(function (s) {
+            return '<option value="' + s.id + '"' + (s.id === row.saladId ? ' selected' : '') + '>' + esc(s.name) + '</option>';
+          }).join('') + '</select>' +
+          countField(findSalad(row.saladId), row, at) +
+          '<button class="btn del small" data-del="' + d + ',' + r + '" aria-label="削除">✕</button></div>';
+      });
+      html += '<button class="btn sub small" data-add="' + d + '">＋ サラダを追加</button></div>';
+      if (d < plan.mode - 1) html += '<hr style="border:0;border-top:1px dashed var(--line);margin:14px 0">';
+    }
+    if (!state.salads.length) html = '<p class="hint">先に「サラダ登録」タブでサラダを登録してください。</p>';
+    $('daysBox').innerHTML = html;
+  }
+
+  $('modeSeg').onclick = function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    state.plan.mode = Number(b.dataset.mode); save(); renderCalc();
+  };
+
+  $('daysBox').addEventListener('change', onDayInput);
+  $('daysBox').addEventListener('input', function (e) { if (e.target.tagName === 'INPUT') onDayInput(e); });
+  function onDayInput(e) {
+    var t = e.target, f = t.dataset.f; if (!f) return;
+    var row = state.plan.days[t.dataset.d][t.dataset.r];
+    row[f] = t.value;
+    if (f === 'saladId') {   // 個数入力欄を切り替える（固定個数サラダは選択式）。選べない個数は空に戻す
+      var s = findSalad(t.value);
+      if (s && s.sizes && !s.sizes.some(function (z) { return String(z.count) === String(row.count); })) row.count = '';
+      save(); renderDays(); renderResult(); return;
+    }
+    save(); renderResult();
+  }
+  $('daysBox').addEventListener('click', function (e) {
+    var del = e.target.closest('[data-del]'), add = e.target.closest('[data-add]');
+    if (del) {
+      var p = del.dataset.del.split(',');
+      var rows = state.plan.days[p[0]];
+      rows.splice(p[1], 1);
+      if (!rows.length) rows.push({ saladId: '', count: '' });
+      save(); renderCalc();
+    } else if (add) {
+      state.plan.days[add.dataset.add].push({ saladId: '', count: '' });
+      save(); renderDays();
+    }
+  });
+
+  // 縦=サラダ、横=材料。サラダ行 = 個数 × 1個あたりの量。
+  // 検食行 = 材料ごとの「検食固定量」。同じ材料を使うサラダが複数あっても1回分（量が違えば最大値）。
+  // 材料の並び順（固定）。ここに無い材料は右端に登録順で並ぶ
+  var COL_ORDER = ['コール', 'MIX', '蒸し鶏', 'コーン', '枝豆', '玉子', '貝割れ', 'タマゴ', 'ポテサラ', 'ブロ', 'カリ',
+    'ツナ', 'わかめ', '海藻', 'しらす', 'カニ', 'ジュリ', 'オクラ', '豆腐', 'マヨ', '雅'];
+  function orderIndex(name) {
+    var n = name.normalize('NFKC').replace(/\s+/g, '').toLowerCase();
+    for (var i = 0; i < COL_ORDER.length; i++) if (COL_ORDER[i].normalize('NFKC').toLowerCase() === n) return i;
+    return COL_ORDER.length;
+  }
+
+  function calc() {
+    var mode = state.plan.mode, cols = {}, colOrder = [], days = [];
+    function addCol(ing) {
+      var key = ing.name.trim() + '\u0000' + (ing.unit || '').trim();
+      if (!cols[key]) { cols[key] = { name: ing.name.trim(), unit: (ing.unit || '').trim() }; colOrder.push(key); }
+      return key;
+    }
+    for (var d = 0; d < mode; d++) {
+      var rows = [], tasting = {};
+      state.plan.days[d].forEach(function (row) {
+        var s = findSalad(row.saladId), n = parseFloat(row.count) || 0;
+        if (!s || n <= 0) return;
+        var amt = {};
+        var list = s.ingredients, mult = n;
+        if (s.sizes) {          // 固定個数サラダ: 選んだ個数の登録量をそのまま使う
+          var z = s.sizes.filter(function (x) { return Number(x.count) === n; })[0];
+          if (!z) return;
+          list = z.ingredients; mult = 1;
+        }
+        list.forEach(function (ing) {
+          if (!ing.name) return;
+          var q = parseFloat(ing.qty), t = parseFloat(ing.tasting);
+          var key = addCol(ing);
+          if (!isNaN(q)) amt[key] = (amt[key] || 0) + q * mult;
+          if (t > 0) tasting[key] = Math.max(tasting[key] || 0, t);
+        });
+        rows.push({ name: s.name, count: n, amt: amt });
+      });
+      days.push({ rows: rows, tasting: tasting });
+    }
+    var list = colOrder.map(function (k, i) { return { key: k, name: cols[k].name, unit: cols[k].unit, o: orderIndex(cols[k].name), i: i }; });
+    list.sort(function (a, b) { return a.o - b.o || a.i - b.i; });   // 固定順 → 同順位は登録順
+    return { cols: list, days: days, mode: mode };
+  }
+
+  function sumAmt(list, cols) {   // list: [{count?, amt}]
+    var r = { count: 0, amt: {} };
+    list.forEach(function (x) {
+      r.count += x.count || 0;
+      cols.forEach(function (c) { if (x.amt[c.key]) r.amt[c.key] = (r.amt[c.key] || 0) + x.amt[c.key]; });
+    });
+    return r;
+  }
+
+  // 手書き用の日付欄「　月　日（　）」。数字と曜日を書き込める幅の空白を確保
+  var DATE_HTML = '<span class="dateline"><span class="blank"></span>月<span class="blank"></span>日（<span class="blank wd"></span>）</span>';
+
+  // 1日分の表（日付欄は表の外・上）。その日に使う材料の列だけを出す
+  function dayTable(dd, allCols) {
+    var cols = allCols.filter(function (col) {
+      return dd.tasting[col.key] > 0 || dd.rows.some(function (x) { return x.amt[col.key] > 0; });
+    });
+    function cells(x) {
+      var h = '<td class="num">' + (x.count ? fmt(x.count) : '') + '</td>';
+      cols.forEach(function (col) { h += '<td class="num">' + (x.amt[col.key] ? fmt(x.amt[col.key]) : '') + '</td>'; });
+      return h;
+    }
+    var span = 2 + cols.length;
+    // 材料名を1行で収められる幅を、全列共通の最小幅にする（全角=1文字分、半角=約0.6文字分）
+    var maxW = 3;
+    cols.forEach(function (col) {
+      var w = 0;
+      for (var i = 0; i < col.name.length; i++) w += col.name.charCodeAt(i) > 255 ? 1 : 0.6;
+      if (w > maxW) maxW = w;
+    });
+    var colW = Math.max(60, Math.ceil(maxW * 15 + 16));
+    var html = '<div class="day-sec"><div class="date-top">' + DATE_HTML + '</div>' +
+      '<div class="tw"><table style="min-width:' + (span * colW) + 'px"><thead><tr><th class="name">サラダ</th><th class="num">個数</th>';
+    cols.forEach(function (col) { html += '<th class="num">' + esc(col.name) + '</th>'; });
+    html += '</tr></thead><tbody>';
+    dd.rows.forEach(function (x) { html += '<tr><td class="name">' + esc(x.name) + '</td>' + cells(x) + '</tr>'; });
+    var tast = { count: 0, amt: dd.tasting };
+    html += '<tr class="tasting"><td class="name">検食</td>' + cells(tast) + '</tr>';
+    html += '<tr class="total"><td class="name">合計</td>' + cells(sumAmt(dd.rows.concat([tast]), cols)) + '</tr>';
+    return html + '</tbody></table></div></div>';
+  }
+
+  function renderResult() {
+    var c = calc();
+    var days = c.days.filter(function (dd) { return dd.rows.length; });
+    if (!days.length) { $('tableBox').innerHTML = '<p class="hint">サラダと個数を入力すると材料表が表示されます。</p>'; return; }
+    $('tableBox').innerHTML = days.map(function (dd) { return dayTable(dd, c.cols); }).join('');
+  }
+
+  /* ---------- 印刷（A4横・1ページに収める） ---------- */
+  var result = $('result');
+  function fitToPage() {
+    document.body.classList.add('print-mode');
+    result.style.zoom = ''; result.style.width = '';
+    var pxPerMm = 96 / 25.4;
+    var availW = (297 - 16 - 3) * pxPerMm, availH = (210 - 16 - 3) * pxPerMm;
+    var w = Math.max(result.scrollWidth, result.offsetWidth), h = result.offsetHeight;
+    var z = Math.min(1, availW / w, availH / h);
+    if (z < 1) {
+      result.style.zoom = z;
+      result.style.width = (availW / pxPerMm / z) + 'mm';
+      var h2 = result.offsetHeight * z;       // 幅を広げた後でも高さが超えるときは再調整
+      if (h2 > availH) result.style.zoom = z * (availH / h2);
+    }
+  }
+  function resetPrint() {
+    document.body.classList.remove('print-mode');
+    result.style.zoom = ''; result.style.width = '';
+  }
+  $('printBtn').onclick = function () { window.print(); };
+  window.addEventListener('beforeprint', fitToPage);
+  window.addEventListener('afterprint', resetPrint);
+
+  /* ---------- サラダ登録画面 ---------- */
+  function renderSaladList() {
+    $('listCard').classList.remove('hidden');
+    $('editCard').classList.add('hidden');
+    if (!state.salads.length) { $('saladList').innerHTML = '<p class="hint">まだサラダがありません。</p>'; return; }
+    $('saladList').innerHTML = state.salads.map(function (s) {
+      function ingTxt(list) {
+        return list.map(function (i) {
+          return i.name + ' ' + i.qty + (i.unit || '') + (i.tasting > 0 ? '(検食' + i.tasting + ')' : ''); }).join('、');
+      }
+      var mat = s.sizes
+        ? s.sizes.map(function (z) { return z.count + '個: ' + ingTxt(z.ingredients); }).join(' ／ ')
+        : ingTxt(s.ingredients);
+      return '<div class="salad-item"><div class="info"><div class="name">' + esc(s.name) +
+        (s.sizes ? ' <span class="hint">個数固定</span>' : '') + '</div>' +
+        '<div class="mat">' + esc(mat) + '</div></div>' +
+        '<button class="btn sub small" data-edit="' + s.id + '">変更</button>' +
+        '<button class="btn del small" data-rm="' + s.id + '">削除</button></div>';
+    }).join('');
+  }
+  $('saladList').onclick = function (e) {
+    var ed = e.target.closest('[data-edit]'), rm = e.target.closest('[data-rm]');
+    if (ed) openEdit(ed.dataset.edit);
+    else if (rm) {
+      var s = findSalad(rm.dataset.rm);
+      if (!confirm('「' + s.name + '」を削除しますか？')) return;
+      state.salads = state.salads.filter(function (x) { return x.id !== s.id; });
+      state.plan.days.forEach(function (rows) { rows.forEach(function (r) { if (r.saladId === s.id) r.saladId = ''; }); });
+      save(); renderSaladList();
+    }
+  };
+  $('newSaladBtn').onclick = function () { openEdit(null); };
+
+  function setFixedView(on) {
+    $('fixedChk').checked = on;
+    $('normalBox').classList.toggle('hidden', on);
+    $('fixedBox').classList.toggle('hidden', !on);
+  }
+  function openEdit(id) {
+    editingId = id;
+    var s = id ? findSalad(id) : { name: '', ingredients: [{ name: '', qty: '', unit: 'g' }] };
+    $('editTitle').textContent = id ? 'サラダを変更' : 'サラダを新規登録';
+    $('saladName').value = s.name;
+    $('ingRows').innerHTML = '';
+    $('sizeBlocks').innerHTML = '';
+    // 通常/固定個数の両方の入力欄を用意しておき、チェックで切り替える
+    if (s.ingredients.length) s.ingredients.forEach(function (i) { addIngRow(i); }); else addIngRow();
+    if (s.sizes) s.sizes.forEach(function (z) { addSizeBlock(z); }); else addSizeBlock();
+    setFixedView(!!s.sizes);
+    $('listCard').classList.add('hidden');
+    $('editCard').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+  $('fixedChk').onchange = function () { setFixedView(this.checked); };
+
+  function addSizeBlock(size) {
+    size = size || { count: '', ingredients: [{ name: '', qty: '', unit: 'g', tasting: '' }] };
+    var div = document.createElement('div');
+    div.className = 'size-block';
+    div.innerHTML =
+      '<div class="size-head"><div><label>個数</label><input type="number" class="s-count" inputmode="numeric" min="1" step="1" placeholder="例: 8" value="' + esc(size.count) + '"></div>' +
+      '<button class="btn del small s-del" type="button">この個数を削除</button></div>' +
+      '<div class="s-ings"></div><button class="btn sub small s-add" type="button">＋ 材料を追加</button>';
+    var box = div.querySelector('.s-ings');
+    size.ingredients.forEach(function (i) { addIngRow(i, box, true); });
+    div.querySelector('.s-add').onclick = function () { addIngRow(null, box, true); };
+    div.querySelector('.s-del').onclick = function () { div.remove(); };
+    $('sizeBlocks').appendChild(div);
+  }
+  $('addSizeBtn').onclick = function () { addSizeBlock(); };
+
+  function collectIngs(box) {
+    var ings = [];
+    box.querySelectorAll('.ing-row').forEach(function (row) {
+      var n = row.querySelector('.i-name').value.trim();
+      var q = parseFloat(row.querySelector('.i-qty').value) || 0;
+      var t = parseFloat(row.querySelector('.i-tasting').value) || 0;
+      if (n && (q > 0 || t > 0)) ings.push({ name: n, qty: q, unit: row.querySelector('.i-unit').value, tasting: t });
+    });
+    return ings;
+  }
+
+  function addIngRow(ing, box, fixed) {
+    ing = ing || { name: '', qty: '', unit: 'g', tasting: '' };
+    box = box || $('ingRows');
+    var div = document.createElement('div');
+    div.className = 'ing-row';
+    var units = UNITS.indexOf(ing.unit) < 0 && ing.unit ? UNITS.concat([ing.unit]) : UNITS;
+    div.innerHTML =
+      '<div class="f-name"><label>材料名</label><input type="text" class="i-name" placeholder="例: レタス" value="' + esc(ing.name) + '"></div>' +
+      '<div><label>' + (fixed ? '数量(この個数分)' : '数量(1個あたり)') + '</label><input type="number" class="i-qty" inputmode="decimal" min="0" step="any" placeholder="0" value="' + esc(ing.qty) + '"></div>' +
+      '<div><label>単位</label><select class="i-unit">' + units.map(function (u) {
+        return '<option' + (u === ing.unit ? ' selected' : '') + '>' + esc(u) + '</option>'; }).join('') + '</select></div>' +
+      '<div><label>検食(固定)</label><input type="number" class="i-tasting" inputmode="decimal" min="0" step="any" placeholder="0" value="' + esc(ing.tasting > 0 ? ing.tasting : '') + '"></div>' +
+      '<button class="btn del" type="button" aria-label="削除">✕</button>';
+    div.querySelector('button').onclick = function () { div.remove(); };
+    box.appendChild(div);
+  }
+  $('addIngBtn').onclick = function () { addIngRow(); };
+  $('cancelBtn').onclick = renderSaladList;
+  $('saveBtn').onclick = function () {
+    var name = $('saladName').value.trim();
+    if (!name) { alert('サラダ名を入力してください'); return; }
+    var ings = [], sizes = null;
+    if ($('fixedChk').checked) {
+      sizes = [];
+      var blocks = $('sizeBlocks').querySelectorAll('.size-block');
+      for (var i = 0; i < blocks.length; i++) {
+        var cnt = parseInt(blocks[i].querySelector('.s-count').value, 10);
+        var zi = collectIngs(blocks[i]);
+        if (!(cnt > 0) && !zi.length) continue;    // 空のブロックは無視
+        if (!(cnt > 0)) { alert('個数を入力してください'); return; }
+        if (!zi.length) { alert(cnt + '個の材料を1つ以上入力してください'); return; }
+        if (sizes.some(function (z) { return z.count === cnt; })) { alert(cnt + '個が重複しています'); return; }
+        sizes.push({ count: cnt, ingredients: zi });
+      }
+      if (!sizes.length) { alert('個数と材料を1つ以上登録してください'); return; }
+      sizes.sort(function (a, b) { return a.count - b.count; });
+    } else {
+      ings = collectIngs($('ingRows'));
+      if (!ings.length) { alert('材料を1つ以上入力してください（材料名と、数量または検食が必要です）'); return; }
+    }
+    var s = editingId ? findSalad(editingId) : null;
+    if (!s) { s = { id: uid() }; state.salads.push(s); }
+    s.name = name; s.ingredients = ings;
+    if (sizes) s.sizes = sizes; else delete s.sizes;
+    save(); renderSaladList();
+  };
+
+  /* ---------- 書き出し／読み込み ---------- */
+  function backupInfo() {
+    var d = new Date(), p = function (n) { return ('0' + n).slice(-2); };
+    var text = JSON.stringify(state, null, 2);
+    $('backupText').value = text;          // どの方法が失敗しても、ここから手でコピーできる
+    return { text: text, name: 'salad_backup_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '.json' };
+  }
+  // ファイルに保存（ダウンロード）
+  $('exportBtn').onclick = function () {
+    try {
+      var b = backupInfo();
+      var blob = new Blob([b.text], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = b.name; a.style.display = 'none';
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { a.remove(); URL.revokeObjectURL(a.href); }, 3000);
+      alert('「' + b.name + '」を保存しました（ダウンロードフォルダなど）。\n保存されない場合は「共有で送る」か、下の文字をコピーしてください。');
+    } catch (e) { alert('保存できませんでした。下に表示された文字をコピーしてメモ等に貼り付けてください。'); }
+  };
+  // 共有メニューで送る（ファイル共有→だめなら文字で共有）
+  $('shareBtn').onclick = function () {
+    var b = backupInfo();
+    if (!navigator.share) { alert('この環境では共有が使えません。「文字としてコピー」を使ってください。'); return; }
+    var data = { title: 'サラダ登録バックアップ', text: b.text };
+    try {
+      var f = new File([b.text], b.name, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) data = { title: 'サラダ登録バックアップ', files: [f] };
+    } catch (e) {}
+    navigator.share(data).catch(function (err) {
+      if (err && err.name === 'AbortError') return;      // 利用者が閉じただけ
+      alert('共有できませんでした。「文字としてコピー」を使ってください。');
+    });
+  };
+  // 文字としてコピー
+  $('copyBtn').onclick = function () {
+    var b = backupInfo(), ta = $('backupText');
+    function manual() { ta.focus(); ta.select(); alert('自動コピーできませんでした。選択された文字を長押ししてコピーしてください。'); }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(b.text).then(function () { alert('コピーしました。メモ帳やLINEなどに貼り付けて保管してください。'); }, manual);
+    } else {
+      ta.focus(); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      if (ok) alert('コピーしました。メモ帳やLINEなどに貼り付けて保管してください。'); else manual();
+    }
+  };
+
+  function applyImport(raw) {
+    var s;
+    try {
+      s = JSON.parse(raw);
+      if (!s || !Array.isArray(s.salads) || !s.plan || !Array.isArray(s.plan.days)) throw new Error('format');
+    } catch (e) { alert('読み込めませんでした。書き出したバックアップを選ぶ（貼り付ける）ようにしてください。'); return; }
+    if (!confirm('今の登録内容を、バックアップの内容（サラダ ' + s.salads.length + ' 件）で置き換えます。よろしいですか？')) return;
+    state = s; save(); renderSaladList();
+    alert('読み込みました');
+  }
+  $('importTextBtn').onclick = function () {
+    var v = $('backupText').value.trim();
+    if (!v) { alert('バックアップの文字を貼り付けてください。'); return; }
+    applyImport(v);
+  };
+  $('importBtn').onclick = function () { $('importFile').value = ''; $('importFile').click(); };
+  $('importFile').onchange = function () {
+    var f = this.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () { applyImport(rd.result); };
+    rd.readAsText(f);
+  };
+
+
+  showTab('calc');
+})();
+</script>
+</body>
+</html>
